@@ -1,15 +1,20 @@
 import math
 import sys
+from collections import OrderedDict
 from functools import partial
 from pathlib import Path
+from time import sleep
 
+import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 
 
 def pgrid(matrix, file=sys.stdout):
+    grid = ''
     for y in matrix:
-        print('|' + '|'.join(['X' if x == 1 else '_' for x in y]) + '|', file=file)
+        grid += f'\n|{"|".join(["X" if x == 1 else "_" for x in y])}|'
+    print(grid, file=file)
 
 
 np.set_printoptions(3, linewidth=150)
@@ -37,51 +42,77 @@ arr = '''.#..##.###...#######
 .#.#.###########.###
 #.#.#.#####.####.###
 ###.##.####.##.#..##
-'''
-arr = np.array([[BLANK if x == '.' else ASTEROID for x in y] for y in arr.splitlines()])
-
-# this_position = (8, 5)
-# y_ind, x_ind = this_position
-# visited = np.zeros_like(arr)
-# visited[this_position] = 1
-#
-# # offsets to reach borders
-# rows, cols = arr.shape
-# up = y_ind, 0
-# down = rows - y_ind - 1, 0
-# left = 0, x_ind
-# right = 0, cols - x_ind - 1
-#
-# pgrid(visited)
+'''.splitlines()
+arr = np.array([[BLANK if x == '.' else ASTEROID for x in y] for y in arr])
 
 asteroid_positions = np.argwhere(arr == ASTEROID)
 
-position_counts = []
-for this in tqdm(asteroid_positions, 'searching'):
-    visible = 0
-    for other in asteroid_positions:
-        d = other - this
-        if np.all(d == 0):
-            continue
+visible_counts = []
+fast_solution = True
 
-        multiplier = math.gcd(*d)
-        d_base = d // multiplier
-        d_obstacles = d_base[:, np.newaxis] * np.arange(1, multiplier)
-        obstacles = this + d_obstacles.T
-        if all(arr[tuple(obstacles.T)] == BLANK):
-            visible += 1
+if not fast_solution:
+    for this in tqdm(asteroid_positions, 'searching'):
+        visible = 0
+        for other in asteroid_positions:
+            d = other - this
+            if np.all(d == 0):
+                continue
 
-    position_counts.append(visible)
+            multiplier = math.gcd(*d)
+            d_base = d // multiplier
+            d_obstacles = d_base[:, np.newaxis] * np.arange(1, multiplier)
+            obstacles = this + d_obstacles.T
+            if all(arr[tuple(obstacles.T)] == BLANK):
+                visible += 1
 
-print(position_counts)
-best_ix = np.argmax(position_counts)
-best_position = asteroid_positions[best_ix]
-print(f'position: {best_position} asteroids visible: {position_counts[best_ix]}')
-print(best_position[1] * 100 + best_position[0])
-# The Elves are placing bets on which will be the 200th asteroid to be vaporized. Win the bet by determining which
-# asteroid that will be; what do you get if you multiply its X coordinate by 100 and then add its Y coordinate?
-# (For example, 8,2 becomes 802.)
-d_asteroids = best_position - asteroid_positions
-degrees = np.array([math.degrees(math.atan2(*d)) + 180 for d in d_asteroids], np.float64)
-# second solution to first part...
-print(np.unique(np.sort(degrees)).shape)
+        visible_counts.append(visible)
+else:
+    for this in tqdm(asteroid_positions, 'searching'):
+        d_asteroids = asteroid_positions - this
+        degrees = np.array([math.degrees(math.atan2(*d)) + 180 for d in d_asteroids], np.float64)
+        visible = len(set(degrees))
+        visible_counts.append(visible)
+
+best_ix = int(np.argmax(visible_counts))
+best_position = tuple(asteroid_positions[best_ix])
+print(f'position: {best_position} asteroids visible: {visible_counts[best_ix]}')
+
+
+# Part 2
+def rad_2_wallclock_degrees(r):
+    if r <= 0.5 * np.pi:
+        r = -r + 0.5 * np.pi
+    else:
+        r = -r + 2.5 * np.pi
+
+    return math.degrees(-r)
+
+
+# print(best_position[1] * 100 + best_position[0])
+asteroid_positions = asteroid_positions[np.any(asteroid_positions != best_position, axis=1)]
+d_asteroids = asteroid_positions - best_position
+distances = np.linalg.norm(d_asteroids, axis=1)
+degrees = np.array([rad_2_wallclock_degrees(math.atan2(*d)) for d in d_asteroids], np.float64)
+# sort by secondary key: distance
+indices = np.argsort(distances, kind='stable')
+asteroid_positions = asteroid_positions[indices]
+degrees = degrees[indices]
+distances = distances[indices]
+# sort by primary key: degree of turn
+indices = np.argsort(degrees, kind='stable')
+asteroid_positions = asteroid_positions[indices]
+degrees = degrees[indices]
+distances = distances[indices]
+
+to_destroy = {d: [] for d in set(degrees)}
+for deg, ap in zip(degrees, asteroid_positions):
+    to_destroy[deg].append(tuple(ap))
+
+destroyed = np.zeros_like(arr)
+destroyed[best_position] = 1
+for p, deg, dist in zip(asteroid_positions, degrees, distances):
+    destroyed[tuple(p)] = 1
+    plt.matshow(destroyed, 0)
+    pgrid(destroyed)
+    print(f'{p}\t{deg:.2f}\t{dist:.2f}')
+    sleep(0.1)
