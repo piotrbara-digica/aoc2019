@@ -1,8 +1,6 @@
 import sys
-from itertools import count
 
 import numpy as np
-from tqdm import tqdm
 
 POSITION, IMMEDIATE, RELATIVE = 0, 1, 2
 HALT = 99
@@ -53,7 +51,7 @@ class Computer:
 
     def display(self, a):
         self.output_code = a
-        print(self.output_code)
+        # print(self.output_code)
 
     def jump_non_zero(self, a, b):
         if a != 0:
@@ -108,13 +106,13 @@ class Computer:
             operation, parameters = self.parse_instruction(self.program_counter)
             if operation == HALT:
                 return
-            self.debug(f'{operation.__name__:<15} params:{parameters} base:{self.relative_base}')
+            self.debug(f'{operation.__name__:<15} params:{parameters} PC:{self.program_counter}')
             self.program_counter += len(parameters) + 1
-            # if operation == Computer.store:
-            #     self.input_code = yield
+            if operation == Computer.store:
+                self.input_code = yield
             operation(self, *parameters)
-            # if operation == Computer.display:
-            #     yield self.output_code
+            if operation == Computer.display:
+                yield self.output_code
 
     def debug(self, *args):
         if self.debug_msg:
