@@ -46,7 +46,7 @@ class Computer:
         self.program[dst] = a * b
 
     def store(self, dst):
-        self.input_code = int(input('type a command...'))
+        # self.input_code = int(input('type a command...'))
         self.program[dst] = self.input_code
 
     def display(self, a):
@@ -104,13 +104,18 @@ class Computer:
     def run(self):
         while True:
             operation, parameters = self.parse_instruction(self.program_counter)
+
             if operation == HALT:
-                return
+                break
+
             self.debug(f'{operation.__name__:<15} params:{parameters} PC:{self.program_counter}')
             self.program_counter += len(parameters) + 1
+
             if operation == Computer.store:
                 self.input_code = yield
+
             operation(self, *parameters)
+
             if operation == Computer.display:
                 yield self.output_code
 
