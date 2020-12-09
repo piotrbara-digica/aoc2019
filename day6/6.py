@@ -1,34 +1,31 @@
-import sys
-from functools import partial
+import string
+from collections import Counter
 from pathlib import Path
 
-debug = partial(print, file=sys.stderr)
-array = [line.split(')') for line in Path('input6.txt').read_text().splitlines()]
+inp = Path('input.txt').read_text().split('\n\n')
+part1, part2 = 0, 0
 
-# object directly orbits only one other
-orbited = {b: a for a, b in array}  # which object does B orbit
+groups = inp
 
-total_count = 0
-for obj in orbited:
-    while obj != "COM":  # go to root
-        obj = orbited[obj]
-        total_count += 1
+for group in groups:
+    glets = set(group.replace('\n', ''))
+    part1 += len(glets)
+# OR: part1 = sum(len(set(g.replace('\n', ''))) for g in groups)
+print(part1)
 
-print(total_count)  # sum of distances to COM from every object
+for group in groups:
+    group = group.strip()
+    members = group.count('\n') + 1
+    counts = Counter(group.replace('\n', ''))
+    part2 += sum(c == members for c in counts.values())
 
-obj = orbited['YOU']
-a_path = []
-while obj != 'COM':
-    a_path.append(obj)
-    obj = orbited[obj]
+print(part2)
+# approach 2
+part2 = 0
+for group in groups:
+    alls = set(string.ascii_lowercase)
+    for p in group.strip().split():
+        alls &= set(p)
+    part2 += len(alls)
 
-obj = orbited['SAN']
-b_path = []
-while obj != 'COM':
-    b_path.append(obj)
-    obj = orbited[obj]
-
-while a_path[-1] == b_path[-1]:
-    a_path.pop(), b_path.pop()
-
-print(len(a_path) + len(b_path))
+print(part2)
