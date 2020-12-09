@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 
-from day9.intcode9 import Computer
+from aoc2019.intcode_final import Computer
 
 np.set_printoptions(2, linewidth=150)
 debug = partial(print, file=sys.stderr)

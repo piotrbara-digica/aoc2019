@@ -1,9 +1,8 @@
-import time
+from pathlib import Path
+
 import numpy as np
 
-from day9 import intcode9
-
-from pathlib import Path
+from aoc2019 import intcode_final
 
 PADDLE, BALL = 3, 4
 tiles = {0: ' ', 1: '█', 2: '▒', PADDLE: '▬', BALL: '◯', }
@@ -11,7 +10,7 @@ tiles = {0: ' ', 1: '█', 2: '▒', PADDLE: '▬', BALL: '◯', }
 code = Path('input.txt').read_text()
 code = [int(c) for c in code.strip().split(',')]
 
-computer = intcode9.Computer(code, debug=False)
+computer = intcode_final.Computer(code, debug=False)
 program = computer.run()
 screen = np.zeros((25, 40), int)
 for x in program:
@@ -29,7 +28,7 @@ def draw():
 draw()
 
 print('Part 2\n')
-computer = intcode9.Computer(code, debug=False)
+computer = intcode_final.Computer(code, debug=False)
 computer.program[0] = 2  # play the game for free
 program = computer.run()
 screen = np.zeros((24, 40), int)
