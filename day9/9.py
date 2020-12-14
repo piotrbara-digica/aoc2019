@@ -1,8 +1,7 @@
-from itertools import *
+from itertools import combinations
 from pathlib import Path
 
 inp = Path('input.txt').read_text().splitlines()
-inp = [int(i) for i in inp]
 
 
 def part1(code, plen=25):
